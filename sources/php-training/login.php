@@ -1,11 +1,22 @@
 <?php
 require_once 'models/UserModel.php';
 require_once 'models/SessionManager.php';
+require_once 'csrf_helper.php';
 
 $userModel = new UserModel();
 $sessionManager = new SessionManager();
 
 if (!empty($_POST['submit'])) {
+    // Kiểm tra CSRF token
+    if (!$csrf->validatePostToken()) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'CSRF token không hợp lệ. Vui lòng refresh trang và thử lại.'
+        ]);
+        exit;
+    }
+    
     $users = [
         'username' => $_POST['username'],
         'password' => $_POST['password']
@@ -56,6 +67,7 @@ if (!empty($_POST['submit'])) {
 <head>
     <title>User form</title>
     <?php include 'views/meta.php' ?>
+    <?php echo $csrf->getMetaTag(); ?>
 </head>
 <body>
 <?php include 'views/header.php'?>
@@ -70,6 +82,7 @@ if (!empty($_POST['submit'])) {
 
                 <div style="padding-top:30px" class="panel-body" >
                     <form id="loginForm" class="form-horizontal" role="form">
+                        <?php echo $csrf->getHiddenInput(); ?>
 
                         <div class="margin-bottom-25 input-group">
                             <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
@@ -110,6 +123,8 @@ if (!empty($_POST['submit'])) {
             </div>
         </div>
     </div>
+
+<?php echo $csrf->getAjaxScript(); ?>
 
 <script>
 document.getElementById('loginForm').addEventListener('submit', function(e) {

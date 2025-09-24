@@ -1,6 +1,7 @@
 <?php
 require_once 'auth_helper.php';
 require_once 'models/UserModel.php';
+require_once 'csrf_helper.php';
 
 // Chỉ kiểm tra login nếu có session_id trong URL
 if (!empty($_GET['session_id'])) {
@@ -13,6 +14,7 @@ if (!empty($_GET['session_id'])) {
     <head>
         <title>Home</title>
         <?php include 'views/meta.php' ?>
+        <?php echo $csrf->getMetaTag(); ?>
     </head>
     <body>
         <?php include 'views/header.php'?>
@@ -78,6 +80,7 @@ $users = $userModel->getUsers($params);
 <head>
     <title>Home</title>
     <?php include 'views/meta.php' ?>
+    <?php echo $csrf->getMetaTag(); ?>
 </head>
 <body>
     <?php include 'views/header.php'?>
@@ -131,5 +134,8 @@ $users = $userModel->getUsers($params);
             </div>
         <?php } ?>
     </div>
+
+<?php echo $csrf->getAjaxScript(); ?>
+
 </body>
 </html>

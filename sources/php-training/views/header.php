@@ -100,13 +100,22 @@ function logout() {
             const sessionData = JSON.parse(sessionDataStr);
             
             if (sessionData && sessionData.session_id) {
-                // Gửi session_id đến server để xóa khỏi Redis
+                // Lấy CSRF token từ meta tag
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                
+                // Gửi session_id và CSRF token đến server
+                const formData = 'session_id=' + encodeURIComponent(sessionData.session_id);
+                if (csrfToken) {
+                    formData += '&csrf_token=' + encodeURIComponent(csrfToken);
+                }
+                
                 fetch('logout.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRF-Token': csrfToken || ''
                     },
-                    body: 'session_id=' + encodeURIComponent(sessionData.session_id)
+                    body: formData
                 })
                 .then(response => {
                     // Xóa session khỏi localStorage sau khi server đã xử lý
