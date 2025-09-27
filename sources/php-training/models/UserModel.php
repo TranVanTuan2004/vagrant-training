@@ -5,17 +5,40 @@ require_once 'BaseModel.php';
 class UserModel extends BaseModel {
 
     public function findUserById($id) {
-        $sql = 'SELECT * FROM users WHERE id = '.$id;
-        $user = $this->select($sql);
-
-        return $user;
+        $sql = 'SELECT * FROM users WHERE id = ?';
+        $stmt = self::$_connection->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $rows = [];
+        if (!empty($result)) {
+            while ($row = $result->fetch_assoc()) {
+                $rows[] = $row;
+            }
+        }
+        $stmt->close();
+        
+        return $rows;
     }
 
     public function findUser($keyword) {
-        $sql = 'SELECT * FROM users WHERE user_name LIKE %'.$keyword.'%'. ' OR user_email LIKE %'.$keyword.'%';
-        $user = $this->select($sql);
-
-        return $user;
+        $sql = 'SELECT * FROM users WHERE user_name LIKE ? OR user_email LIKE ?';
+        $stmt = self::$_connection->prepare($sql);
+        $searchTerm = '%' . $keyword . '%';
+        $stmt->bind_param('ss', $searchTerm, $searchTerm);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $rows = [];
+        if (!empty($result)) {
+            while ($row = $result->fetch_assoc()) {
+                $rows[] = $row;
+            }
+        }
+        $stmt->close();
+        
+        return $rows;
     }
 
     /**
@@ -26,10 +49,21 @@ class UserModel extends BaseModel {
      */
     public function auth($userName, $password) {
         $md5Password = md5($password);
-        $sql = 'SELECT * FROM users WHERE name = "' . $userName . '" AND password = "'.$md5Password.'"';
-
-        $user = $this->select($sql);
-        return $user;
+        $sql = 'SELECT * FROM users WHERE name = ? AND password = ?';
+        $stmt = self::$_connection->prepare($sql);
+        $stmt->bind_param('ss', $userName, $md5Password);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $rows = [];
+        if (!empty($result)) {
+            while ($row = $result->fetch_assoc()) {
+                $rows[] = $row;
+            }
+        }
+        $stmt->close();
+        
+        return $rows;
     }
 
     /**
@@ -38,9 +72,13 @@ class UserModel extends BaseModel {
      * @return mixed
      */
     public function deleteUserById($id) {
-        $sql = 'DELETE FROM users WHERE id = '.$id;
-        return $this->delete($sql);
-
+        $sql = 'DELETE FROM users WHERE id = ?';
+        $stmt = self::$_connection->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        
+        return $result;
     }
 
     /**
@@ -49,14 +87,17 @@ class UserModel extends BaseModel {
      * @return mixed
      */
     public function updateUser($input) {
-        $sql = 'UPDATE users SET 
-                 name = "' . mysqli_real_escape_string(self::$_connection, $input['name']) .'", 
-                 password="'. md5($input['password']) .'"
-                WHERE id = ' . $input['id'];
-
-        $user = $this->update($sql);
-
-        return $user;
+        $sql = 'UPDATE users SET name = ?, fullname = ?, email = ?, type = ?, password = ? WHERE id = ?';
+        $stmt = self::$_connection->prepare($sql);
+        $hashedPassword = md5($input['password']);
+        $fullname = $input['fullname'] ?? $input['name'];
+        $email = $input['email'] ?? '';
+        $type = $input['type'] ?? 'user';
+        $stmt->bind_param('sssssi', $input['name'], $fullname, $email, $type, $hashedPassword, $input['id']);
+        $result = $stmt->execute();
+        $stmt->close();
+        
+        return $result;
     }
 
     /**
@@ -65,12 +106,18 @@ class UserModel extends BaseModel {
      * @return mixed
      */
     public function insertUser($input) {
-        $sql = "INSERT INTO `app_web1`.`users` (`name`, `password`) VALUES (" .
-                "'" . $input['name'] . "', '".md5($input['password'])."')";
-
-        $user = $this->insert($sql);
-
-        return $user;
+        $sql = "INSERT INTO `app_web1`.`users` (`name`, `fullname`, `email`, `type`, `password`) VALUES (?, ?, ?, ?, ?)";
+        $stmt = self::$_connection->prepare($sql);
+        $hashedPassword = md5($input['password']);
+        $fullname = $input['fullname'] ?? $input['name'];
+        $email = $input['email'] ?? '';
+        $type = $input['type'] ?? 'user';
+        $stmt->bind_param('sssss', $input['name'], $fullname, $email, $type, $hashedPassword);
+        $result = $stmt->execute();
+        $insertId = self::$_connection->insert_id;
+        $stmt->close();
+        
+        return $insertId;
     }
 
     /**
@@ -81,15 +128,22 @@ class UserModel extends BaseModel {
     public function getUsers($params = []) {
         //Keyword
         if (!empty($params['keyword'])) {
-            $sql = 'SELECT * FROM users WHERE name LIKE "%' . $params['keyword'] .'%"';
-
-            //Keep this line to use Sql Injection
-            //Don't change
-            //Example keyword: abcef%";TRUNCATE banks;##
-            $users = self::$_connection->multi_query($sql);
-
-            //Get data
-            $users = $this->query($sql);
+            $sql = 'SELECT * FROM users WHERE name LIKE ?';
+            $stmt = self::$_connection->prepare($sql);
+            $searchTerm = '%' . $params['keyword'] . '%';
+            $stmt->bind_param('s', $searchTerm);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $rows = [];
+            if (!empty($result)) {
+                while ($row = $result->fetch_assoc()) {
+                    $rows[] = $row;
+                }
+            }
+            $stmt->close();
+            
+            return $rows;
         } else {
             $sql = 'SELECT * FROM users';
             $users = $this->select($sql);

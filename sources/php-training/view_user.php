@@ -6,8 +6,12 @@ $user = NULL; //Add new user
 $id = NULL;
 
 if (!empty($_GET['id'])) {
-    $id = $_GET['id'];
-    $user = $userModel->findUserById($id);//Update existing user
+    $id = filter_var($_GET['id'], FILTER_VALIDATE_INT);
+    if ($id === false) {
+        $id = NULL;
+    } else {
+        $user = $userModel->findUserById($id);//Update existing user
+    }
 }
 
 
@@ -37,18 +41,18 @@ if (!empty($_POST['submit'])) {
             User profile
         </div>
         <form method="POST">
-            <input type="hidden" name="id" value="<?php echo $id ?>">
+            <input type="hidden" name="id" value="<?php echo htmlspecialchars($id, ENT_QUOTES, 'UTF-8') ?>">
             <div class="form-group">
                 <label for="name">Name</label>
-                <span><?php if (!empty($user[0]['name'])) echo $user[0]['name'] ?></span>
+                <span><?php if (!empty($user[0]['name'])) echo htmlspecialchars($user[0]['name'], ENT_QUOTES, 'UTF-8') ?></span>
             </div>
             <div class="form-group">
                 <label for="password">Fullname</label>
-                <span><?php if (!empty($user[0]['name'])) echo $user[0]['fullname'] ?></span>
+                <span><?php if (!empty($user[0]['name'])) echo htmlspecialchars($user[0]['fullname'], ENT_QUOTES, 'UTF-8') ?></span>
             </div>
             <div class="form-group">
                 <label for="password">Email</label>
-                <span><?php if (!empty($user[0]['name'])) echo $user[0]['email'] ?></span>
+                <span><?php if (!empty($user[0]['name'])) echo htmlspecialchars($user[0]['email'], ENT_QUOTES, 'UTF-8') ?></span>
             </div>
         </form>
     <?php } else { ?>
